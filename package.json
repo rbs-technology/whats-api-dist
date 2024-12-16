@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "description": "Fix API for whatsappweb.js",
   "scripts": {
-    "dev": "nodemon src/index.js",
+    "start": "nodemon src/index.js",
     "build": "webpack",
-    "start": "node dist/index.min.js",
     "lint": "eslint .",
     "test": "jest"
   },
