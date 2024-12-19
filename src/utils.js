@@ -23,7 +23,7 @@ async function encerrarAtendimento(client, message, foneNumber, userStates) {
     await client.sendMessage(message.from, 'Atendimento encerrado. Até breve!');
 
     // Reinicia o estado do usuário
-    userStates[foneNumber] = { currentMenu: null, lastInteraction: null };
+    delete userStates[foneNumber];
     console.log(`✅ Estado de ${foneNumber} reiniciado após encerramento.`);
 }
 

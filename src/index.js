@@ -1,4 +1,4 @@
-const createClient = require('./config');
+const { createClient, ALLOWED_NUMBER } = require('./config');
 const { menus, globalHandlers } = require('./menus');
 const { loadUserStates, saveUserStates } = require('./states');
 const { atendimentoExpirado, encerrarAtendimento } = require('./utils');
@@ -18,12 +18,11 @@ client.on('qr', qr => {
 
 client.on('message', async message => {
     const foneNumber = message.from.split('@')[0];
-    const ALLOWED_NUMBER = '558586749017'; // Número permitido durante o desenvolvimento
 
-    // Verifica se a mensagem é de um número permitido
+    // Valida o número permitido
     if (foneNumber !== ALLOWED_NUMBER) {
-        console.log(`Mensagem ignorada de número não permitido: ${foneNumber}`);
-        return; // Sai do evento se o número não for permitido
+        console.log(`❌ Mensagem ignorada de número não permitido: ${foneNumber}`);
+        return;
     }
 
     const input = message.body.trim().toLowerCase();
@@ -31,7 +30,13 @@ client.on('message', async message => {
 
     let state = userStates[foneNumber];
 
-    // Se o estado for nulo ou o menu não estiver definido, inicia o menu principal
+    // Verifica se o usuário está em atendimento humano
+    if (state && state.currentMenu === 'atendimentoHumano') {
+        console.log('📴 Usuário em atendimento humano. Nenhuma resposta automática será enviada.');
+        return;
+    }
+
+    // Inicializa estado do usuário se necessário
     if (!state || !state.currentMenu) {
         console.log('🔄 Criando estado inicial para o usuário...');
         state = { currentMenu: 'principal', lastInteraction: Date.now() };
@@ -43,14 +48,6 @@ client.on('message', async message => {
             message.from,
             `Olá! Seja bem-vindo ao atendimento automatizado.\n\n${menus.principal.text}`
         );
-        return;
-    }
-
-    // Verifica se o atendimento expirou
-    if (atendimentoExpirado(state)) {
-        console.log('⌛ Atendimento expirado. Encerrando...');
-        await encerrarAtendimento(client, message, foneNumber, userStates);
-        saveUserStates(userStates);
         return;
     }
 
@@ -69,13 +66,27 @@ client.on('message', async message => {
         return;
     }
 
-    const option = currentMenu.aliases[input] || globalHandlers[input] ? input : null;
-    console.log(`🔍 Opção resolvida: ${option}`);
+    const option = currentMenu.aliases[input]
+        ? input
+        : globalHandlers[input]
+            ? input
+            : null;
+
+    // Se nenhuma opção é encontrada, redireciona ao menu principal
+    if (!option) {
+        console.log('❌ Nenhum alias ou handler global encontrado. Enviando menu principal...');
+        state.currentMenu = 'principal';
+        await client.sendMessage(
+            message.from,
+            `Olá! Não entendi sua mensagem. Por favor, escolha uma opção válida.\n\n${menus.principal.text}`
+        );
+        return;
+    }
 
     const handler = currentMenu.handlers[option] || globalHandlers[option];
     if (handler) {
         console.log(`⚙️ Executando handler para a opção: ${option}`);
-        await handler(client, message, state, foneNumber, userStates); // Passa userStates
+        await handler(client, message, state, foneNumber, userStates);
     } else {
         console.log('❌ Nenhum handler encontrado. Enviando mensagem de erro...');
         await client.sendMessage(message.from, 'Opção inválida. Tente novamente.');

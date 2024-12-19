@@ -7,9 +7,12 @@ function createClient() {
         puppeteer: {
             executablePath: puppeteer.executablePath(),
             headless: true,
-            timeout: 60000
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
         }
     });
 }
 
-module.exports = createClient;
+module.exports = {
+    createClient,
+    ALLOWED_NUMBER: '558586749017', // Número permitido
+};

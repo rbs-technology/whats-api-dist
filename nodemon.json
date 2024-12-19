@@ -1,4 +1,4 @@
 {
-    "watch": ["src"],
-    "ignore": ["userStates.json"]
+  "watch": ["src"],
+  "ignore": ["userStates.json", ".wwebjs_auth"]
 }
