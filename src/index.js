@@ -1,7 +1,6 @@
 const { createClient, ALLOWED_NUMBER } = require('./config');
 const { menus, globalHandlers } = require('./menus');
 const { loadUserStates, saveUserStates } = require('./states');
-const { atendimentoExpirado, encerrarAtendimento } = require('./utils');
 
 const userStates = loadUserStates();
 const client = createClient();
@@ -29,10 +28,13 @@ client.on('message', async message => {
     console.log(`📩 Mensagem recebida de ${foneNumber}: ${input}`);
 
     let state = userStates[foneNumber];
+    const chat = await message.getChat();
 
     // Verifica se o usuário está em atendimento humano
     if (state && state.currentMenu === 'atendimentoHumano') {
         console.log('📴 Usuário em atendimento humano. Nenhuma resposta automática será enviada.');
+        chat.markUnread();
+        chat.unreadCount();
         return;
     }
 
